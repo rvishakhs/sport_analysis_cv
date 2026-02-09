@@ -1,6 +1,6 @@
 from easyocr.utils import consecutive
 
-from Basketball_analysis.utils import measure_distance
+from Basketball_analysis.utils import measure_distance, get_center_of_bbox
 
 
 class BallAcquisitionDetector:
@@ -102,6 +102,30 @@ class BallAcquisitionDetector:
             ball_info = ball_tracks[frame_num].get(1, {})
             if not ball_info:
                 continue
+
+            ball_bbox = ball_info.get('bbox', [])
+            if not ball_bbox:
+                continue
+
+
+            ball_center = get_center_of_bbox(ball_bbox)
+
+            best_player_id = self.find_best_candidate_for_possession(ball_center, player_tracks[frame_num], ball_bbox)
+
+            if best_player_id != -1:
+                number_of_consecutive_frames = consecutive_possession_count.get(best_player_id, 0) + 1
+                consecutive_possession_count = {best_player_id: number_of_consecutive_frames}
+
+                if consecutive_possession_count[best_player_id] >= self.min_frames:
+                    possession_list[frame_num] = best_player_id
+
+            else:
+                consecutive_possession_count= {}
+        return possession_list
+
+
+
+
 
 
 
